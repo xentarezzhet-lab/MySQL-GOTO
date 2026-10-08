@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import pymysql
 from config import db_name
-from main import get_tables, create_table, delete_table, get_db
+from main import get_tables, create_table, delete_table, get_db, get_columns, insert_row
 
 TYPES = ["INT", "VARCHAR(45)", "VARCHAR(100)", "DECIMAL(8,2)", "DATE", "DATETIME"]
 
@@ -12,7 +12,7 @@ root.title("MySQL GOTO")
 def current_db():
     return combo_db.get()
 # ---------- DB SELECTION! ----------
-tk.Label(root, text="База:").grid(row=0, column=0, padx=10, pady=10)
+tk.Label(root, text="Database:").grid(row=0, column=0, padx=10, pady=10)
 combo_db = ttk.Combobox(root, state="readonly", width=30)
 combo_db.grid(row=0, column=1, padx=10)
 
@@ -58,8 +58,47 @@ def on_delete_click():
         return
     messagebox.showinfo("Succesed", f"Table {table} deleted")
     refresh_tables()
-
-
+# def test_columns():
+#     db = current_db()
+#     table = combo.get()
+#     print("DB:", db)
+#     print("TABLE:", table)
+#     if not table:
+#         messagebox.showwarning("Attention", "First select a table")
+#         return
+#     columns = get_columns(db, table)
+#     print(columns)
+def open_insert_window():
+    table = combo.get()
+    if not table:
+        messagebox.showwarning("Attention", "First select a table")
+        return
+    columns = get_columns(current_db(), table)
+    win = tk.Toplevel(root)
+    win.title("Add row")
+    entries = {}
+    for i, column in enumerate(columns):
+        name = column["Field"]
+        tk.Label(win, text=name).grid(row=i,column=0,padx=10,pady=5)
+        entry = tk.Entry(win, width=25)
+        entry.grid(row=i,column=1,padx=10,pady=5)
+        entries[name] = entry
+    tk.Button(win, text="Add").grid(row=len(columns),column=0,columnspan=2,pady=10)
+    def on_add_click():
+        values = {}
+        for name, entry in entries.items():
+            values[name] = entry.get()
+        try:
+            insert_row(current_db(), table, values)
+        except pymysql.MySQLError as e:
+            messagebox.showerror("DB Error", str(e))
+            return
+        except ValueError as e:
+            messagebox.showwarning("Warning", str(e))
+            return
+        messagebox.showinfo("Success", "Row added")
+        win.destroy()
+    tk.Button(win,text="Add",command=on_add_click).grid(row=len(columns),column=0,columnspan=2,pady=10)
 # ---------- create pop up window! ----------
 def open_create_window():
     win = tk.Toplevel(root)
@@ -107,6 +146,6 @@ def open_create_window():
 tk.Button(root, text="Reload DBS", command=refresh_db).grid(row=0, column=2, padx=5)
 tk.Button(root, text="Create table", command=open_create_window).grid(row=2, column=0, columnspan=2, pady=5)
 tk.Button(root, text="Delete table", command=on_delete_click).grid(row=3, column=0, columnspan=2, pady=5)
-
+tk.Button(root, text="Add row", command=open_insert_window).grid(row=4, column=0, columnspan=2, pady=5)
 refresh_db()# refresh everything
 root.mainloop()

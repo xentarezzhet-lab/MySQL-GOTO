@@ -27,9 +27,6 @@ def create_table(db, table, columns):
         print("Table created")
     finally:
         connection.close()
-if __name__ == "__main__":
-    cols = [{"name": "id", "type": "INT"}, {"name": "fio", "type": "VARCHAR(100)"}]
-    create_table(db_name, "test1_table", cols)
 
 def delete_table(db, table):
     sql = f"DROP TABLE `{table}`"
@@ -41,8 +38,7 @@ def delete_table(db, table):
         print("Table deleted")
     finally:
         connection.close()
-if __name__ == "__main__":
-    delete_table(db_name, "test_table")
+
 def get_tables(db):
     connection = get_connection(db)
     try:
@@ -59,6 +55,29 @@ def get_db():
             cursor.execute("SHOW DATABASES")
             rows = cursor.fetchall()
         return [list(row.values())[0] for row in rows]
+    finally:
+        connection.close()
+def get_columns(db,table):
+    connection = get_connection(db)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SHOW COLUMNS FROM `{table}`")
+            rows = cursor.fetchall()
+        return rows
+    finally:
+        connection.close()
+
+def insert_row(db, table, values):
+    if not values:
+        raise ValueError("No values provided")
+    columns = ", ".join(f"`{column}`" for column in values.keys())
+    placeholders = ", ".join(["%s"] * len(values))
+    sql = f"INSERT INTO `{table}` ({columns}) VALUES ({placeholders})"
+    connection = get_connection(db)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, list(values.values()))
+        connection.commit()
     finally:
         connection.close()
 # def insert_row():
