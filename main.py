@@ -9,7 +9,7 @@ def get_connection(database=None):
         user=user,
         password=password,
         database=database,
-        cursorclass=pymysql.cursors.DictCursor,
+        cursorclass=pymysql.cursors.DictCursor
     )
 print("Connection approved")
 
@@ -29,19 +29,42 @@ def create_table(db, table, columns):
         connection.close()
 if __name__ == "__main__":
     cols = [{"name": "id", "type": "INT"}, {"name": "fio", "type": "VARCHAR(100)"}]
-    create_table(db_name, "test_table", cols)
+    create_table(db_name, "test1_table", cols)
 
-
-
-
-
+def delete_table(db, table):
+    sql = f"DROP TABLE `{table}`"
+    connection = get_connection(db)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+        connection.commit()
+        print("Table deleted")
+    finally:
+        connection.close()
+if __name__ == "__main__":
+    delete_table(db_name, "test_table")
+def get_tables(db):
+    connection = get_connection(db)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SHOW TABLES")
+            rows = cursor.fetchall()
+        return [list(row.values())[0] for row in rows]
+    finally:
+        connection.close()
+def get_db():
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SHOW DATABASES")
+            rows = cursor.fetchall()
+        return [list(row.values())[0] for row in rows]
+    finally:
+        connection.close()
 # def insert_row():
 # def delete_row():
-
-# def delete_table():
 # def upd_row():
 # def get_db():
-# def get_table():
 # def get_columns():
 # def select_rows():
 # def check_name():
